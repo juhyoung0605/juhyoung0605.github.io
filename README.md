@@ -41,8 +41,4 @@
 
 <br>
 
----
-<div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=juhyoung0605&show_icons=true&theme=radical&hide_border=true" height="150">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=juhyoung0605&layout=compact&theme=radical&hide_border=true" height="150">
-</div>
+
