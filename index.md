@@ -69,6 +69,13 @@ description: 삼성전자 공정기술 합격 후기, 반도체 장학금(OK배�
     * 낙성대역 5번 출구 근처, 남자 머리 잘하는 곳 내돈내산 후기.
 * **[아이고 종강이야 (대학생 일상 로그)](https://blog.naver.com/jubro_0605/224118661396)**
 
+
+---
+
+## 🆕 Recent Updates (자동 업데이트)
+<div id="blog-posts">
+</div>
+
 <br>
 <br>
 
