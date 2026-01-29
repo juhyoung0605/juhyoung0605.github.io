@@ -2,14 +2,14 @@ name: Update Blog Posts
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch: # 수동 실행 버튼
+    - cron: '0 0 * * *' # 매일 자정 실행
+  workflow_dispatch: # 수동 실행 버튼 활성화
 
 jobs:
   update:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # 깃허브에 파일을 쓸 수 있는 권한
       
     steps:
       - uses: actions/checkout@v3
@@ -29,5 +29,5 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add index.md sitemap.xml
-          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 자동 업데이트" && git push)
+          git add index.html sitemap.xml  # index.md 대신 index.html을 추가
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 자동 업데이트: 블로그 포스트 및 사이트맵" && git push)
