@@ -1,4 +1,6 @@
 
+<meta name="google-site-verification" content="qgTCNSJjyI0DQd79vN5CcpnfcIZ6QgkVvtnLzvkPQFw" />
+
 ### 📄 [수원 성균관대역 수제버거 맛집 버거스 올마이티(알바기념 메뉴 추천)](https://blog.naver.com/jubro_0605/224162939134?fromRss=true&trackingCode=rss)
 > 📅 2026.01.28 <br>
 > 최근에 학교 주변(성균관대역)에서 알바를 시작했습니다 바로 버거스 올마이티 수원성균관대점인데요 알바기념 사장님 매장 홍보차(?) 뭐 내가 글을 작성한다고 얼마나 도움이 될진 모르겠...
