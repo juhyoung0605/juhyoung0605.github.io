@@ -180,3 +180,16 @@ for entry in feed.entries:
 
 print("✅ posts/*.html 자동 생성 완료")
 
+# =========================
+# robots.txt 자동 생성
+# =========================
+ROBOTS_TXT = """User-agent: *
+Allow: /
+
+Sitemap: https://juhyoung0605.github.io/jublog/sitemap.xml
+"""
+
+with open("robots.txt", "w", encoding="utf-8") as f:
+    f.write(ROBOTS_TXT)
+
+print("✅ robots.txt 생성 완료")
