@@ -3,47 +3,102 @@ import datetime
 import re
 import os
 
-# 1. 설정
-rss_url = "https://rss.blog.naver.com/jubro_0605"
-html_path = "index.html"
-sitemap_path = "sitemap.xml"
+# =========================
+# 설정
+# =========================
+RSS_URL = "https://rss.blog.naver.com/jubro_0605"
+SITE_URL = "https://juhyoung0605.github.io"
+INDEX_HTML = "index.html"
+SITEMAP_XML = "sitemap.xml"
 
-# 2. RSS 피드 가져오기
-feed = feedparser.parse(rss_url)
+START_MARKER = "<!-- START_RECENT_POSTS -->"
+END_MARKER = "<!-- END_RECENT_POSTS -->"
 
-# 3. HTML 최근 게시물 리스트 생성
-html_list = ""
+# =========================
+# RSS 파싱
+# =========================
+feed = feedparser.parse(RSS_URL)
+
+# =========================
+# Recent Updates HTML 생성
+# =========================
+recent_html = ""
+
 for entry in feed.entries[:5]:
-    dt = datetime.datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
+    dt = datetime.datetime.strptime(
+        entry.published, "%a, %d %b %Y %H:%M:%S %z"
+    )
     date_str = dt.strftime("%Y.%m.%d")
-    summary = re.sub('<[^<]+?>', '', entry.description).replace('&nbsp;', ' ').strip()[:100] + "..."
-    
-    html_list += f"<div style='margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;'>"
-    html_list += f"<a href='{entry.link}' target='_blank' style='font-weight:bold; color:#0056b3; text-decoration:none;'>{entry.title}</a>"
-    html_list += f"<p style='margin:5px 0; font-size:0.85em; color:#666;'>📅 {date_str} | {summary}</p></div>\n"
 
-# 4. sitemap.xml 생성 (& 문자를 &amp;로 변환하여 에러 방지)
-with open(sitemap_path, "w", encoding="utf-8") as f:
+    summary = re.sub("<[^<]+?>", "", entry.description)
+    summary = summary.replace("&nbsp;", " ").strip()[:120] + "..."
+
+    recent_html += f"""
+    <div class="recent-item">
+        <a href="{entry.link}" target="_blank" rel="noopener noreferrer">
+            {entry.title}
+        </a>
+        <p style="margin:5px 0; font-size:0.85em; color:#666;">
+            📅 {date_str} | {summary}
+        </p>
+    </div>
+    """
+
+# =========================
+# index.html 업데이트
+# =========================
+if os.path.exists(INDEX_HTML):
+    with open(INDEX_HTML, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if START_MARKER in content and END_MARKER in content:
+        new_content = (
+            content.split(START_MARKER)[0]
+            + START_MARKER
+            + recent_html
+            + END_MARKER
+            + content.split(END_MARKER)[1]
+        )
+
+        with open(INDEX_HTML, "w", encoding="utf-8") as f:
+            f.write(new_content)
+
+        print("✅ index.html Recent Updates 업데이트 완료")
+
+# =========================
+# sitemap.xml 생성 (GitHub Pages 전용)
+# =========================
+with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-    f.write('  <url><loc>https://juhyoung0605.github.io/</loc></url>\n')
-    for entry in feed.entries:
-        # URL 내의 & 기호를 XML 표준인 &amp;로 치환합니다 (핵심 수정 사항)
-        safe_link = entry.link.replace("&", "&amp;")
-        f.write(f'  <url><loc>{safe_link}</loc></url>\n')
-    f.write('</urlset>')
 
-# 5. index.html 업데이트
-if os.path.exists(html_path):
-    with open(html_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    
-    start_marker, end_marker = "", ""
-    if start_marker in content and end_marker in content:
-        start_index = content.find(start_marker) + len(start_marker)
-        end_index = content.find(end_marker)
-        
-        new_content = content[:start_index] + "\n" + html_list + content[end_index:]
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        print("✅ 업데이트 완료 (사이트맵 특수문자 처리 포함)")
+    # index
+    f.write("  <url>\n")
+    f.write(f"    <loc>{SITE_URL}/</loc>\n")
+    f.write("    <changefreq>daily</changefreq>\n")
+    f.write("    <priority>1.0</priority>\n")
+    f.write("  </url>\n")
+
+    # posts (GitHub Pages 기준 URL만 포함)
+    for entry in feed.entries:
+        match = re.search(r"/(\d+)", entry.link)
+        if not match:
+            continue
+
+        post_id = match.group(1)
+
+        dt = datetime.datetime.strptime(
+            entry.published, "%a, %d %b %Y %H:%M:%S %z"
+        )
+        lastmod = dt.strftime("%Y-%m-%d")
+
+        f.write("  <url>\n")
+        f.write(f"    <loc>{SITE_URL}/posts/{post_id}.html</loc>\n")
+        f.write(f"    <lastmod>{lastmod}</lastmod>\n")
+        f.write("    <changefreq>monthly</changefreq>\n")
+        f.write("    <priority>0.8</priority>\n")
+        f.write("  </url>\n")
+
+    f.write("</urlset>")
+
+print("✅ sitemap.xml 생성 완료")
