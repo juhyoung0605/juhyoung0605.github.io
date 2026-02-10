@@ -4,14 +4,14 @@ import re
 import os
 
 # =========================
-# 설정 (레포지토리 이름 'jublog' 반영)
+# 설정 (루트 주소로 변경)
 # =========================
 RSS_URL = "https://rss.blog.naver.com/jubro_0605"
-SITE_URL = "https://juhyoung0605.github.io/jublog" # 경로 수정
+SITE_URL = "https://juhyoung0605.github.io" # /jublog 제거
 INDEX_HTML = "index.html"
 SITEMAP_XML = "sitemap.xml"
 
-# index.html의 마커와 일치시켜야 합니다.
+# index.html의 마커 이름과 반드시 일치해야 합니다.
 START_MARKER = ""
 END_MARKER = ""
 
@@ -41,7 +41,7 @@ for entry in feed.entries[:5]:
     """
 
 # =========================
-# index.html 업데이트 (덮어쓰기 로직)
+# index.html 업데이트 (덮어쓰기)
 # =========================
 if os.path.exists(INDEX_HTML):
     with open(INDEX_HTML, "r", encoding="utf-8") as f:
@@ -59,7 +59,7 @@ if os.path.exists(INDEX_HTML):
         print("✅ index.html 업데이트 완료")
 
 # =========================
-# sitemap.xml 생성 (& 에러 방지 처리)
+# sitemap.xml 생성 (& 에러 방지)
 # =========================
 with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
@@ -67,7 +67,7 @@ with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write(f"  <url><loc>{SITE_URL}/</loc><priority>1.0</priority></url>\n")
 
     for entry in feed.entries:
-        # URL의 &를 &amp;로 변환하여 XML 에러 방지
+        # & 기호를 &amp;로 변환하여 XML 문법 에러를 방지합니다.
         safe_link = entry.link.replace("&", "&amp;")
         f.write(f"  <url><loc>{safe_link}</loc><priority>0.8</priority></url>\n")
     f.write('</urlset>')
