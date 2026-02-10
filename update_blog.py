@@ -1,75 +1,162 @@
 import feedparser
 import datetime
-import re
 import os
+import re
+from urllib.parse import urlparse
+from xml.sax.saxutils import escape
 
 # =========================
-# 설정 (루트 주소 기준)
+# 설정
 # =========================
-RSS_URL = "https://rss.blog.naver.com/jubro_0605"
-SITE_URL = "https://juhyoung0605.github.io"
-INDEX_HTML = "index.html"
-SITEMAP_XML = "sitemap.xml"
+RSS_URL = "https://rss.blog.naver.com/jubro_0605.xml"
+BASE_URL = "https://juhyoung0605.github.io"
+POST_DIR = "posts"
 
-# index.html의 주석과 반드시 똑같아야 합니다!
-START_MARKER = ""
-END_MARKER = ""
+INDEX_FILE = "index.html"
+POSTS_FILE = "posts.html"
+SITEMAP_FILE = "sitemap.xml"
+ROBOTS_FILE = "robots.txt"
+
+MAX_INDEX_POSTS = 5
+
+os.makedirs(POST_DIR, exist_ok=True)
 
 # =========================
 # RSS 파싱
 # =========================
 feed = feedparser.parse(RSS_URL)
 
-recent_html = ""
-for entry in feed.entries[:5]:
-    dt = datetime.datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
-    date_str = dt.strftime("%Y.%m.%d")
-    summary = re.sub("<[^<]+?>", "", entry.description).replace("&nbsp;", " ").strip()[:120] + "..."
-    
-    recent_html += f"""
-    <div class="recent-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-        <a href="{entry.link}" target="_blank" rel="noopener noreferrer" style="font-weight:bold; color:#0056b3; text-decoration:none;">
-            {entry.title}
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 {date_str} | {summary}
-        </p>
-    </div>\n"""
+posts_meta = []
+
+for entry in feed.entries:
+    if not hasattr(entry, "published"):
+        continue
+
+    dt = datetime.datetime.strptime(
+        entry.published, "%a, %d %b %Y %H:%M:%S %z"
+    )
+    date_str = dt.strftime("%Y-%m-%d")
+    safe_title = re.sub(r"[^\w\-]", "", entry.title.replace(" ", "-")).lower()
+    filename = f"{date_str}-{safe_title}.html"
+    filepath = os.path.join(POST_DIR, filename)
+
+    summary = re.sub("<[^<]+?>", "", entry.description)
+    summary = summary.replace("&nbsp;", " ").strip()
+
+    # posts 개별 html 생성 (이미 있으면 스킵)
+    if not os.path.exists(filepath):
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>{entry.title}</title>
+  <meta name="description" content="{summary[:150]}">
+  <link rel="canonical" href="{entry.link}">
+</head>
+<body>
+  <h1>{entry.title}</h1>
+  <p><a href="{entry.link}" target="_blank">👉 네이버 원문 보기</a></p>
+  <p>{summary}</p>
+</body>
+</html>
+""")
+
+    posts_meta.append({
+        "title": entry.title,
+        "date": date_str,
+        "summary": summary[:120] + "...",
+        "file": f"{POST_DIR}/{filename}"
+    })
+
+# 최신순 정렬
+posts_meta.sort(key=lambda x: x["date"], reverse=True)
 
 # =========================
-# index.html 업데이트
+# index.html 생성
 # =========================
-if os.path.exists(INDEX_HTML):
-    with open(INDEX_HTML, "r", encoding="utf-8") as f:
-        content = f.read()
+index_items = ""
+for post in posts_meta[:MAX_INDEX_POSTS]:
+    index_items += f"""
+<li>
+  <a href="{post['file']}">{post['title']}</a><br>
+  <small>{post['date']} · {post['summary']}</small>
+</li>
+"""
 
-    # 마커가 파일 안에 있는지 확인 후 교체
-    if START_MARKER in content and END_MARKER in content:
-        parts = content.split(START_MARKER)
-        header = parts[0]
-        footer = parts[1].split(END_MARKER)[1]
-        
-        new_content = header + START_MARKER + "\n" + recent_html + END_MARKER + footer
-
-        with open(INDEX_HTML, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        print("✅ index.html 업데이트 완료")
-    else:
-        print(f"❌ 에러: 마커를 찾을 수 없습니다. (START_MARKER 존재 여부: {START_MARKER in content})")
-        exit(1)
+with open(INDEX_FILE, "w", encoding="utf-8") as f:
+    f.write(f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>네이버 블로그 아카이브</title>
+  <meta name="description" content="네이버 블로그 글을 자동으로 아카이빙한 사이트">
+</head>
+<body>
+  <h1>최근 글</h1>
+  <ul>{index_items}</ul>
+  <p><a href="posts.html">📚 전체 글 보기</a></p>
+</body>
+</html>
+""")
 
 # =========================
-# sitemap.xml & robots.txt 생성
+# posts.html 생성
 # =========================
-with open(SITEMAP_XML, "w", encoding="utf-8") as f:
-    f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-    f.write(f"  <url><loc>{SITE_URL}/</loc><priority>1.0</priority></url>\n")
-    for entry in feed.entries:
-        safe_link = entry.link.replace("&", "&amp;")
-        f.write(f"  <url><loc>{safe_link}</loc><priority>0.8</priority></url>\n")
-    f.write('</urlset>')
+posts_items = ""
+for post in posts_meta:
+    posts_items += f"""
+<li>
+  <a href="{post['file']}">{post['title']}</a>
+  <small>({post['date']})</small>
+</li>
+"""
 
-with open("robots.txt", "w", encoding="utf-8") as f:
-    f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml")
-print("✅ 사이트맵 및 robots.txt 생성 완료")
+with open(POSTS_FILE, "w", encoding="utf-8") as f:
+    f.write(f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전체 글 목록</title>
+</head>
+<body>
+  <h1>전체 글</h1>
+  <ul>{posts_items}</ul>
+  <p><a href="index.html">← 홈으로</a></p>
+</body>
+</html>
+""")
+
+# =========================
+# sitemap.xml 생성
+# =========================
+with open(SITEMAP_FILE, "w", encoding="utf-8") as f:
+    f.write("""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+""")
+
+    def add_url(loc):
+        f.write(f"""  <url>
+    <loc>{escape(loc)}</loc>
+  </url>
+""")
+
+    add_url(BASE_URL + "/")
+    add_url(BASE_URL + "/posts.html")
+
+    for post in posts_meta:
+        add_url(f"{BASE_URL}/{post['file']}")
+
+    f.write("</urlset>")
+
+# =========================
+# robots.txt 생성
+# =========================
+with open(ROBOTS_FILE, "w", encoding="utf-8") as f:
+    f.write(f"""User-agent: *
+Allow: /
+
+Sitemap: {BASE_URL}/sitemap.xml
+""")
+
+print("✅ 전체 업데이트 완료")
