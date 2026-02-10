@@ -4,14 +4,14 @@ import re
 import os
 
 # =========================
-# 설정 (루트 주소로 변경)
+# 설정 (루트 주소 기준)
 # =========================
 RSS_URL = "https://rss.blog.naver.com/jubro_0605"
 SITE_URL = "https://juhyoung0605.github.io"
 INDEX_HTML = "index.html"
 SITEMAP_XML = "sitemap.xml"
 
-# index.html의 마커 이름과 반드시 일치해야 합니다!
+# index.html의 주석과 반드시 똑같아야 합니다!
 START_MARKER = ""
 END_MARKER = ""
 
@@ -20,7 +20,6 @@ END_MARKER = ""
 # =========================
 feed = feedparser.parse(RSS_URL)
 
-# 최근 게시물 HTML 생성
 recent_html = ""
 for entry in feed.entries[:5]:
     dt = datetime.datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
@@ -44,6 +43,7 @@ if os.path.exists(INDEX_HTML):
     with open(INDEX_HTML, "r", encoding="utf-8") as f:
         content = f.read()
 
+    # 마커가 파일 안에 있는지 확인 후 교체
     if START_MARKER in content and END_MARKER in content:
         parts = content.split(START_MARKER)
         header = parts[0]
@@ -55,7 +55,7 @@ if os.path.exists(INDEX_HTML):
             f.write(new_content)
         print("✅ index.html 업데이트 완료")
     else:
-        print("❌ 에러: 마커를 찾을 수 없습니다. index.html의 주석을 확인하세요.")
+        print(f"❌ 에러: 마커를 찾을 수 없습니다. (START_MARKER 존재 여부: {START_MARKER in content})")
         exit(1)
 
 # =========================
