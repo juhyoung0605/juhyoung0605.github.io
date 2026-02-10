@@ -1,162 +1,77 @@
 import feedparser
 import datetime
-import os
 import re
-from urllib.parse import urlparse
-from xml.sax.saxutils import escape
+from pathlib import Path
 
 # =========================
 # 설정
 # =========================
-RSS_URL = "https://rss.blog.naver.com/jubro_0605.xml"
-BASE_URL = "https://juhyoung0605.github.io"
-POST_DIR = "posts"
+RSS_URL = "https://rss.blog.naver.com/jubro_0605"
+INDEX_HTML = Path("index.html")
+SITEMAP_XML = Path("sitemap.xml")
+SITE_URL = "https://juhyoung0605.github.io"
 
-INDEX_FILE = "index.html"
-POSTS_FILE = "posts.html"
-SITEMAP_FILE = "sitemap.xml"
-ROBOTS_FILE = "robots.txt"
-
-MAX_INDEX_POSTS = 5
-
-os.makedirs(POST_DIR, exist_ok=True)
+MAX_POSTS = 5
 
 # =========================
-# RSS 파싱
+# RSS 로드
 # =========================
 feed = feedparser.parse(RSS_URL)
 
-posts_meta = []
+posts_html = []
 
-for entry in feed.entries:
-    if not hasattr(entry, "published"):
-        continue
+for entry in feed.entries[:MAX_POSTS]:
+    published = datetime.datetime(*entry.published_parsed[:6])
+    date_str = published.strftime("%Y.%m.%d")
 
-    dt = datetime.datetime.strptime(
-        entry.published, "%a, %d %b %Y %H:%M:%S %z"
+    summary = re.sub("<[^>]+>", "", entry.summary)
+    summary = summary.replace("&nbsp;", " ").strip()[:100] + "..."
+
+    posts_html.append(
+        f"""
+        <div class="post-item">
+            <a href="{entry.link}" target="_blank"><strong>{entry.title}</strong></a><br>
+            <small>📅 {date_str} · {summary}</small>
+        </div>
+        """
     )
-    date_str = dt.strftime("%Y-%m-%d")
-    safe_title = re.sub(r"[^\w\-]", "", entry.title.replace(" ", "-")).lower()
-    filename = f"{date_str}-{safe_title}.html"
-    filepath = os.path.join(POST_DIR, filename)
 
-    summary = re.sub("<[^<]+?>", "", entry.description)
-    summary = summary.replace("&nbsp;", " ").strip()
-
-    # posts 개별 html 생성 (이미 있으면 스킵)
-    if not os.path.exists(filepath):
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>{entry.title}</title>
-  <meta name="description" content="{summary[:150]}">
-  <link rel="canonical" href="{entry.link}">
-</head>
-<body>
-  <h1>{entry.title}</h1>
-  <p><a href="{entry.link}" target="_blank">👉 네이버 원문 보기</a></p>
-  <p>{summary}</p>
-</body>
-</html>
-""")
-
-    posts_meta.append({
-        "title": entry.title,
-        "date": date_str,
-        "summary": summary[:120] + "...",
-        "file": f"{POST_DIR}/{filename}"
-    })
-
-# 최신순 정렬
-posts_meta.sort(key=lambda x: x["date"], reverse=True)
+posts_block = "\n".join(posts_html)
 
 # =========================
-# index.html 생성
+# index.html 업데이트
 # =========================
-index_items = ""
-for post in posts_meta[:MAX_INDEX_POSTS]:
-    index_items += f"""
-<li>
-  <a href="{post['file']}">{post['title']}</a><br>
-  <small>{post['date']} · {post['summary']}</small>
-</li>
-"""
+html = INDEX_HTML.read_text(encoding="utf-8")
 
-with open(INDEX_FILE, "w", encoding="utf-8") as f:
-    f.write(f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>네이버 블로그 아카이브</title>
-  <meta name="description" content="네이버 블로그 글을 자동으로 아카이빙한 사이트">
-</head>
-<body>
-  <h1>최근 글</h1>
-  <ul>{index_items}</ul>
-  <p><a href="posts.html">📚 전체 글 보기</a></p>
-</body>
-</html>
-""")
+start = "<!-- BLOG_UPDATE_START -->"
+end = "<!-- BLOG_UPDATE_END -->"
 
-# =========================
-# posts.html 생성
-# =========================
-posts_items = ""
-for post in posts_meta:
-    posts_items += f"""
-<li>
-  <a href="{post['file']}">{post['title']}</a>
-  <small>({post['date']})</small>
-</li>
-"""
+new_html = (
+    html[: html.index(start) + len(start)]
+    + "\n"
+    + posts_block
+    + "\n"
+    + html[html.index(end) :]
+)
 
-with open(POSTS_FILE, "w", encoding="utf-8") as f:
-    f.write(f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>전체 글 목록</title>
-</head>
-<body>
-  <h1>전체 글</h1>
-  <ul>{posts_items}</ul>
-  <p><a href="index.html">← 홈으로</a></p>
-</body>
-</html>
-""")
+INDEX_HTML.write_text(new_html, encoding="utf-8")
 
 # =========================
 # sitemap.xml 생성
 # =========================
-with open(SITEMAP_FILE, "w", encoding="utf-8") as f:
-    f.write("""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-""")
+urls = [SITE_URL + "/"]
 
-    def add_url(loc):
-        f.write(f"""  <url>
-    <loc>{escape(loc)}</loc>
-  </url>
-""")
+for entry in feed.entries:
+    urls.append(entry.link.split("?")[0])
 
-    add_url(BASE_URL + "/")
-    add_url(BASE_URL + "/posts.html")
+sitemap = ['<?xml version="1.0" encoding="UTF-8"?>']
+sitemap.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
-    for post in posts_meta:
-        add_url(f"{BASE_URL}/{post['file']}")
+for url in urls:
+    sitemap.append(f"<url><loc>{url}</loc></url>")
 
-    f.write("</urlset>")
+sitemap.append("</urlset>")
 
-# =========================
-# robots.txt 생성
-# =========================
-with open(ROBOTS_FILE, "w", encoding="utf-8") as f:
-    f.write(f"""User-agent: *
-Allow: /
+SITEMAP_XML.write_text("\n".join(sitemap), encoding="utf-8")
 
-Sitemap: {BASE_URL}/sitemap.xml
-""")
-
-print("✅ 전체 업데이트 완료")
+print("✅ index.html & sitemap.xml 업데이트 완료")
