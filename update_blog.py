@@ -4,15 +4,16 @@ import re
 import os
 
 # =========================
-# 설정
+# 설정 (레포지토리 이름 'jublog' 반영)
 # =========================
 RSS_URL = "https://rss.blog.naver.com/jubro_0605"
-SITE_URL = "https://juhyoung0605.github.io"
+SITE_URL = "https://juhyoung0605.github.io/jublog" # 경로 수정
 INDEX_HTML = "index.html"
 SITEMAP_XML = "sitemap.xml"
 
-START_MARKER = "<!-- START_RECENT_POSTS -->"
-END_MARKER = "<!-- END_RECENT_POSTS -->"
+# index.html의 마커와 일치시켜야 합니다.
+START_MARKER = ""
+END_MARKER = ""
 
 # =========================
 # RSS 파싱
@@ -23,19 +24,14 @@ feed = feedparser.parse(RSS_URL)
 # Recent Updates HTML 생성
 # =========================
 recent_html = ""
-
 for entry in feed.entries[:5]:
-    dt = datetime.datetime.strptime(
-        entry.published, "%a, %d %b %Y %H:%M:%S %z"
-    )
+    dt = datetime.datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
     date_str = dt.strftime("%Y.%m.%d")
-
-    summary = re.sub("<[^<]+?>", "", entry.description)
-    summary = summary.replace("&nbsp;", " ").strip()[:120] + "..."
-
+    summary = re.sub("<[^<]+?>", "", entry.description).replace("&nbsp;", " ").strip()[:120] + "..."
+    
     recent_html += f"""
-    <div class="recent-item">
-        <a href="{entry.link}" target="_blank" rel="noopener noreferrer">
+    <div class="recent-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <a href="{entry.link}" target="_blank" rel="noopener noreferrer" style="font-weight:bold; color:#0056b3; text-decoration:none;">
             {entry.title}
         </a>
         <p style="margin:5px 0; font-size:0.85em; color:#666;">
@@ -45,151 +41,41 @@ for entry in feed.entries[:5]:
     """
 
 # =========================
-# index.html 업데이트
+# index.html 업데이트 (덮어쓰기 로직)
 # =========================
 if os.path.exists(INDEX_HTML):
     with open(INDEX_HTML, "r", encoding="utf-8") as f:
         content = f.read()
 
     if START_MARKER in content and END_MARKER in content:
-        new_content = (
-            content.split(START_MARKER)[0]
-            + START_MARKER
-            + recent_html
-            + END_MARKER
-            + content.split(END_MARKER)[1]
-        )
+        parts = content.split(START_MARKER)
+        header = parts[0]
+        footer = parts[1].split(END_MARKER)[1]
+        
+        new_content = header + START_MARKER + "\n" + recent_html + "\n" + END_MARKER + footer
 
         with open(INDEX_HTML, "w", encoding="utf-8") as f:
             f.write(new_content)
-
-        print("✅ index.html Recent Updates 업데이트 완료")
+        print("✅ index.html 업데이트 완료")
 
 # =========================
-# sitemap.xml 생성 (GitHub Pages 전용)
+# sitemap.xml 생성 (& 에러 방지 처리)
 # =========================
 with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
+    f.write(f"  <url><loc>{SITE_URL}/</loc><priority>1.0</priority></url>\n")
 
-    # index
-    f.write("  <url>\n")
-    f.write(f"    <loc>{SITE_URL}/</loc>\n")
-    f.write("    <changefreq>daily</changefreq>\n")
-    f.write("    <priority>1.0</priority>\n")
-    f.write("  </url>\n")
-
-    # posts (GitHub Pages 기준 URL만 포함)
     for entry in feed.entries:
-        match = re.search(r"/(\d+)", entry.link)
-        if not match:
-            continue
-
-        post_id = match.group(1)
-
-        dt = datetime.datetime.strptime(
-            entry.published, "%a, %d %b %Y %H:%M:%S %z"
-        )
-        lastmod = dt.strftime("%Y-%m-%d")
-
-        f.write("  <url>\n")
-        f.write(f"    <loc>{SITE_URL}/posts/{post_id}.html</loc>\n")
-        f.write(f"    <lastmod>{lastmod}</lastmod>\n")
-        f.write("    <changefreq>monthly</changefreq>\n")
-        f.write("    <priority>0.8</priority>\n")
-        f.write("  </url>\n")
-
-    f.write("</urlset>")
-
+        # URL의 &를 &amp;로 변환하여 XML 에러 방지
+        safe_link = entry.link.replace("&", "&amp;")
+        f.write(f"  <url><loc>{safe_link}</loc><priority>0.8</priority></url>\n")
+    f.write('</urlset>')
 print("✅ sitemap.xml 생성 완료")
 
-
 # =========================
-# posts/*.html 자동 생성
+# robots.txt 생성
 # =========================
-POST_DIR = "posts"
-os.makedirs(POST_DIR, exist_ok=True)
-
-POST_TEMPLATE = """<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <title>{title} | Jublog Archive</title>
-  <meta name="description" content="{description}">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="{naver_url}">
-</head>
-<body>
-
-<h1>{title}</h1>
-<p><strong>게시일:</strong> {date}</p>
-
-<section>
-  <h2>요약</h2>
-  <p>{summary}</p>
-</section>
-
-<section>
-  <p>
-    👉 전체 내용은
-    <a href="{naver_url}" target="_blank" rel="noopener noreferrer">
-      네이버 블로그
-    </a>
-    에서 확인할 수 있습니다.
-  </p>
-</section>
-
-</body>
-</html>
-"""
-
-for entry in feed.entries:
-    match = re.search(r"/(\d+)", entry.link)
-    if not match:
-        continue
-
-    post_id = match.group(1)
-    post_path = os.path.join(POST_DIR, f"{post_id}.html")
-
-    # 이미 있으면 재생성하지 않음 (불필요한 커밋 방지)
-    if os.path.exists(post_path):
-        continue
-
-    dt = datetime.datetime.strptime(
-        entry.published, "%a, %d %b %Y %H:%M:%S %z"
-    )
-    date_str = dt.strftime("%Y.%m.%d")
-
-    raw_summary = re.sub("<[^<]+?>", "", entry.description)
-    raw_summary = raw_summary.replace("&nbsp;", " ").strip()
-
-    summary = raw_summary[:500]
-    if not summary.endswith("."):
-        summary += "."
-
-    html = POST_TEMPLATE.format(
-        title=entry.title,
-        description=entry.title,
-        date=date_str,
-        summary=summary,
-        naver_url=entry.link
-    )
-
-    with open(post_path, "w", encoding="utf-8") as f:
-        f.write(html)
-
-print("✅ posts/*.html 자동 생성 완료")
-
-# =========================
-# robots.txt 자동 생성
-# =========================
-ROBOTS_TXT = """User-agent: *
-Allow: /
-
-Sitemap: https://juhyoung0605.github.io/jublog/sitemap.xml
-"""
-
 with open("robots.txt", "w", encoding="utf-8") as f:
-    f.write(ROBOTS_TXT)
-
+    f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml")
 print("✅ robots.txt 생성 완료")
