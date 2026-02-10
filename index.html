@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Google Search Console 인증 (확실한 사실) -->
     <meta name="google-site-verification" content="qgTCNSJjyI0DQd79vN5CcpnfcIZ6QgkVvtnLzvkPQFw" />
 
     <title>Jublog Archive | 네이버 블로그 아카이브</title>
-    <meta name="description" content="네이버 블로그 Jublog의 모든 글을 자동으로 정리한 아카이브 페이지입니다. 취업, 반도체, 맛집, 일상 기록을 한 곳에서 확인하세요.">
-    <meta name="robots" content="index, follow">
-
+    <meta name="description" content="네이버 블로그 Jublog의 모든 글을 카테고리별로 정리한 아카이브입니다.">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sakura.css/css/sakura.css">
 
     <style>
-        body { max-width: 900px; margin: auto; padding: 20px; }
-        h1 { border-bottom: 3px solid #0056b3; padding-bottom: 10px; }
-        h2 { margin-top: 45px; border-left: 6px solid #007bff; padding-left: 12px; background: #f0f7ff; }
+        body { max-width: 900px; margin: auto; padding: 20px; font-family: 'Pretendard', sans-serif; }
+        h1 { border-bottom: 3px solid #0056b3; padding-bottom: 10px; color: #0056b3; }
+        h2 { margin-top: 45px; border-left: 6px solid #007bff; padding-left: 12px; background: #f0f7ff; color: #007bff; }
+        h3 { color: #444; margin-top: 30px; border-bottom: 1px dashed #ccc; }
         .update-box { background: #fffbe6; border: 1px solid #ffe58f; border-radius: 10px; padding: 20px; }
-        .recent-item { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .recent-item a { font-weight: bold; text-decoration: none; color: #0056b3; }
+        .post-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9em; }
+        .post-item { padding: 8px 12px; border: 1px solid #eee; border-radius: 6px; background: #fff; }
+        .tag { background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-right: 5px; }
         footer { margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #777; }
+        @media (max-width: 600px) { .post-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 
@@ -28,73 +27,57 @@
 
 <header>
     <h1>👋 안녕하세요, 이주형(Jublog)입니다</h1>
-    <p>
-        네이버 블로그 글을 <strong>구글 검색 노출 목적</strong>으로 정리한
-        개인 아카이브 페이지입니다.
-    </p>
+    <p>삼성전자 DS 공정기술 합격 기록과 네이버 블로그의 모든 글을 정리한 아카이브입니다.</p>
 </header>
 
 <section>
-    <h2>🆕 Recent Updates</h2>
+    <h2>🆕 Recent Updates (자동 업데이트)</h2>
     <div class="update-box">
-        <!-- START_RECENT_POSTS -->
-    <div class="recent-item">
-        <a href="https://blog.naver.com/jubro_0605/224177646261?fromRss=true&trackingCode=rss" target="_blank" rel="noopener noreferrer">
-            네덜란드 관광지 풍차마을 잔세스칸스 (치즈, 나막신 공장 기념품 추천)
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 2026.02.09 | 안녕하세요 주브로입니다! 네덜란드 여행 중 가장 좋았던 관광지인 풍차마을 잔세스칸스에 대해서 써보려고 합니다 그나저나 여행 때문에 일주일 블로그 글을 못쓰니 일방문자가 죽죽 떨어지네요 ㅎㅎ 여행 다녀왔으니 다시 열심...
-        </p>
+<p style="text-align: center; color: #888;">최신 글을 불러오는 중입니다...</p>
+</div>
+</section>
+
+<section>
+    <h2>🏆 Career: 삼성전자 & 합격 기록</h2>
+    <div class="post-grid">
+        <div class="post-item"><span class="tag">최종합격</span> <a href="https://blog.naver.com/jubro_0605/224113377005">25 하반기 삼성전자 DS 하계인턴 전환 후기</a></div>
+        <div class="post-item"><span class="tag">장기실습</span> <a href="https://blog.naver.com/jubro_0605/224153815070">2025 상반기 삼성전자 DS 장기현장실습 합격 후기</a></div>
+        <div class="post-item"><span class="tag">직무부트</span> <a href="https://blog.naver.com/jubro_0605/224156241781">코멘토 반도체 공정설계 실무 수강 후기</a></div>
+        <div class="post-item"><span class="tag">미국탐방</span> <a href="https://blog.naver.com/jubro_0605/224132926358">실리콘밸리 기술탐방 (IEDM 학회, Lam Research)</a></div>
     </div>
-    
-    <div class="recent-item">
-        <a href="https://blog.naver.com/jubro_0605/224172951501?fromRss=true&trackingCode=rss" target="_blank" rel="noopener noreferrer">
-            암스테르담 공항 근처 숙소 추천 파크플라자 암스테르담 에어포트
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 2026.02.05 | 네덜란드 여행와서 암스테르담 스키폴 공항 주변 첫날 묵었던 호텔 후기를 작성하려고 합니다 바로 파크 플라자 암스테르담 에어포트 입니다! 14시간의 장시간 비행 후 저녁에 도착한 터라, 공항 주변의 숙소로 빠르게 가서...
-        </p>
+</section>
+
+<section>
+    <h2>🍽️ Gourmet: 지역별 맛집</h2>
+    <h3>📍 수원 성대역 & 정자동</h3>
+    <div class="post-grid">
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224162939134">버거스 올마이티 수원성대점</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224161429353">하동우렁추어탕 수원정자점</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224148745609">은행나무장어 성대역점</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224119640830">정든닭발 성대점</a></div>
     </div>
-    
-    <div class="recent-item">
-        <a href="https://blog.naver.com/jubro_0605/224170318834?fromRss=true&trackingCode=rss" target="_blank" rel="noopener noreferrer">
-            2026년 1월 일상 log 낋여왔습니다
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 2026.02.03 | 어느덧 방학을 한지 6주가 지났고 (방학이 절반도 안남았어 ㅠㅜㅠㅜ) 2026년의 첫달인 1월도 지나갔다 1월을 나는 어떻게 보냈을까?? 요즘 일상이 고민/운동/밥/잠 인줄 알았는데 사진을 정리해보니 이번달 부지런히...
-        </p>
+
+    <h3>📍 수원역 & 행궁동 & 화서</h3>
+    <div class="post-grid">
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224166267757">스시하루 화서역점</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224164631697">쌉니다 구 미소마트 화서점</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224158990810">행궁동 파스타 에그궁</a></div>
+        <div class="post-item"><a href="https://blog.naver.com/jubro_0605/224151946315">수원역 한우곱창 우심</a></div>
     </div>
-    
-    <div class="recent-item">
-        <a href="https://blog.naver.com/jubro_0605/224168890646?fromRss=true&trackingCode=rss" target="_blank" rel="noopener noreferrer">
-            네이버 블로그 2개월차 현실 수익 후기(네이버 애드포스트, 체험단)
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 2026.02.02 | 네이버 블로그를 다시 시작한지 2개월차! 블로그로 수익을 기대하는 분들께 도움이 될까 싶어 현실적인 내 후기를 남기려고 한다 나도 부업 느낌으로 하나 운영하고 싶었지만 현실으 녹록치 않았다 네이버 애드포스트 나는 2...
-        </p>
-    </div>
-    
-    <div class="recent-item">
-        <a href="https://blog.naver.com/jubro_0605/224166267757?fromRss=true&trackingCode=rss" target="_blank" rel="noopener noreferrer">
-            [수원 스타필드 근처 맛집] 스시하루 화서역점 내돈내산 후기
-        </a>
-        <p style="margin:5px 0; font-size:0.85em; color:#666;">
-            📅 2026.01.31 | 안녕하세요 주브로입니다~ 오늘은 자주 가는 수원 스타필드 근처의 초밥집을 소개하려고 합니다. 바로 스시하루 화서역점 입니다! 위치 및 정보 스타필드 후아유 쪽 뒷문(?)으로 나와서 횡단보도를 건너면 바로 볼 수 있습...
-        </p>
-    </div>
-    <!-- END_RECENT_POSTS -->
+</section>
+
+<section>
+    <h2>🎨 Life: 일상 및 리뷰</h2>
+    <div class="post-grid">
+        <div class="post-item"><span class="tag">일상</span> <a href="https://blog.naver.com/jubro_0605/224170318834">2026년 1월 일상 log</a></div>
+        <div class="post-item"><span class="tag">여행</span> <a href="https://blog.naver.com/jubro_0605/224177646261">네덜란드 풍차마을 잔세스칸스</a></div>
+        <div class="post-item"><span class="tag">리뷰</span> <a href="https://blog.naver.com/jubro_0605/224168890646">블로그 2개월차 애드포스트 수익 후기</a></div>
+        <div class="post-item"><span class="tag">일상</span> <a href="https://blog.naver.com/jubro_0605/224117395896">아이고 종강이야</a></div>
     </div>
 </section>
 
 <footer>
-    <p>
-        👉 전체 글 원문은
-        <a href="https://blog.naver.com/jubro_0605" target="_blank" rel="noopener noreferrer">
-            네이버 블로그(Jublog)
-        </a>
-        에서 확인하실 수 있습니다.
-    </p>
-    <p>© 2026 Lee Ju-hyeong</p>
+    <p>© 2026 Lee Ju-hyeong | <a href="https://blog.naver.com/jubro_0605" target="_blank">네이버 블로그(Jublog)</a></p>
 </footer>
 
 </body>
