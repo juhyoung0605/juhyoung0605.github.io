@@ -1,77 +1,106 @@
-import feedparser
-import datetime
-import re
-from pathlib import Path
+import os
+import json
+from datetime import datetime
+from string import Template
 
-# =========================
-# 설정
-# =========================
-RSS_URL = "https://rss.blog.naver.com/jubro_0605"
-INDEX_HTML = Path("index.html")
-SITEMAP_XML = Path("sitemap.xml")
-SITE_URL = "https://juhyoung0605.github.io"
+BASE_URL = "https://juhyoung0605.github.io"
+POSTS_DIR = "posts"
 
-MAX_POSTS = 5
+POST_TEMPLATE_FILE = "post.html"
+POST_DATA_FILE = "posts_data.json"
 
-# =========================
-# RSS 로드
-# =========================
-feed = feedparser.parse(RSS_URL)
+os.makedirs(POSTS_DIR, exist_ok=True)
 
-posts_html = []
+def load_template():
+    with open(POST_TEMPLATE_FILE, "r", encoding="utf-8") as f:
+        return Template(f.read())
 
-for entry in feed.entries[:MAX_POSTS]:
-    published = datetime.datetime(*entry.published_parsed[:6])
-    date_str = published.strftime("%Y.%m.%d")
+def load_posts():
+    with open(POST_DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-    summary = re.sub("<[^>]+>", "", entry.summary)
-    summary = summary.replace("&nbsp;", " ").strip()[:100] + "..."
+def generate_post(post, template):
+    slug = post["slug"]
+    filename = f"{slug}.html"
+    url = f"{BASE_URL}/posts/{filename}"
 
-    posts_html.append(
-        f"""
-        <div class="post-item">
-            <a href="{entry.link}" target="_blank"><strong>{entry.title}</strong></a><br>
-            <small>📅 {date_str} · {summary}</small>
-        </div>
-        """
+    html = template.safe_substitute(
+        title=post["title"],
+        description=post.get("description", post["title"]),
+        keywords=", ".join(post.get("keywords", [])),
+        date=post["date"],
+        content=post["content"],
+        url=url
     )
 
-posts_block = "\n".join(posts_html)
+    with open(os.path.join(POSTS_DIR, filename), "w", encoding="utf-8") as f:
+        f.write(html)
 
-# =========================
-# index.html 업데이트
-# =========================
-html = INDEX_HTML.read_text(encoding="utf-8")
+    return url, post["date"]
 
-start = "<!-- BLOG_UPDATE_START -->"
-end = "<!-- BLOG_UPDATE_END -->"
+def generate_index(posts):
+    items = []
+    for p in posts:
+        items.append(
+            f"<li><a href='/posts/{p['slug']}.html'>{p['title']}</a> <small>{p['date']}</small></li>"
+        )
 
-new_html = (
-    html[: html.index(start) + len(start)]
-    + "\n"
-    + posts_block
-    + "\n"
-    + html[html.index(end) :]
-)
+    html = f"""
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Juhyoung Blog</title>
+  <meta name="description" content="반도체, AI, 기술 블로그">
+</head>
+<body>
+  <h1>📘 Juhyoung Blog</h1>
+  <ul>
+    {''.join(items)}
+  </ul>
+</body>
+</html>
+"""
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(html)
 
-INDEX_HTML.write_text(new_html, encoding="utf-8")
+def generate_sitemap(urls):
+    items = []
+    for url, date in urls:
+        items.append(f"""
+  <url>
+    <loc>{url}</loc>
+    <lastmod>{date}</lastmod>
+  </url>
+""")
 
-# =========================
-# sitemap.xml 생성
-# =========================
-urls = [SITE_URL + "/"]
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{BASE_URL}</loc>
+    <lastmod>{datetime.now().date()}</lastmod>
+  </url>
+  {''.join(items)}
+</urlset>
+"""
 
-for entry in feed.entries:
-    urls.append(entry.link.split("?")[0])
+    with open("sitemap.xml", "w", encoding="utf-8") as f:
+        f.write(sitemap)
 
-sitemap = ['<?xml version="1.0" encoding="UTF-8"?>']
-sitemap.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+def main():
+    template = load_template()
+    posts = load_posts()
 
-for url in urls:
-    sitemap.append(f"<url><loc>{url}</loc></url>")
+    sitemap_urls = []
 
-sitemap.append("</urlset>")
+    for post in posts:
+        url, date = generate_post(post, template)
+        sitemap_urls.append((url, date))
 
-SITEMAP_XML.write_text("\n".join(sitemap), encoding="utf-8")
+    generate_index(posts)
+    generate_sitemap(sitemap_urls)
 
-print("✅ index.html & sitemap.xml 업데이트 완료")
+    print("✅ Blog updated successfully")
+
+if __name__ == "__main__":
+    main()
