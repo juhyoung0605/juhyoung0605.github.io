@@ -3,9 +3,17 @@
 
     <url>
         <loc>https://juhyoung0605.github.io/</loc>
-        <lastmod>2026-03-04</lastmod>
+        <lastmod>2026-03-05</lastmod>
     </url>
     
+        <url>
+            <loc>https://blog.naver.com/jubro_0605/224204501523?fromRss=true&amp;trackingCode=rss</loc>
+        </url>
+        
+        <url>
+            <loc>https://blog.naver.com/jubro_0605/224204191816?fromRss=true&amp;trackingCode=rss</loc>
+        </url>
+        
         <url>
             <loc>https://blog.naver.com/jubro_0605/224201898636?fromRss=true&amp;trackingCode=rss</loc>
         </url>
@@ -196,13 +204,5 @@
         
         <url>
             <loc>https://blog.naver.com/jubro_0605/224130583481?fromRss=true&amp;trackingCode=rss</loc>
-        </url>
-        
-        <url>
-            <loc>https://blog.naver.com/jubro_0605/224128044251?fromRss=true&amp;trackingCode=rss</loc>
-        </url>
-        
-        <url>
-            <loc>https://blog.naver.com/jubro_0605/224126545583?fromRss=true&amp;trackingCode=rss</loc>
         </url>
         </urlset>
