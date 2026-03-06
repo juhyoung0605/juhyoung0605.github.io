@@ -61,21 +61,45 @@ if start in content and end in content:
     print("✅ index.html 업데이트 완료")
 
 # =========================
-# sitemap.xml 생성
+# sitemap.xml 생성 (RSS + 주요 게시물 수동 추가)
 # =========================
+# 주형님이 꼭 넣고 싶은 글 리스트
+IMPORTANT_POSTS = [
+    "https://blog.naver.com/jubro_0605/224091794208",
+    "https://blog.naver.com/jubro_0605/224113377005",
+    "https://blog.naver.com/jubro_0605/224134992517",
+    "https://blog.naver.com/jubro_0605/224156241781",
+    "https://blog.naver.com/jubro_0605/224168890646",
+    "https://blog.naver.com/jubro_0605/224128044251"
+]
+
 with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-    f.write(f"  <url><loc>{SITE_URL}/</loc><lastmod>{TODAY}</lastmod></url>\n")
 
+    # 1. 메인 주소 (juhyoung0605.github.io)
+    f.write(f"  <url><loc>{SITE_URL}/</loc><lastmod>{TODAY}</lastmod><priority>1.0</priority></url>\n")
+
+    # 2. RSS를 통한 최신 글 (자동 추출)
+    rss_links = []
     for entry in feed.entries:
         safe_url = entry.link.replace("&", "&amp;")
-        f.write(f"  <url><loc>{safe_url}</loc></url>\n")
+        rss_links.append(entry.link) # 중복 체크용 원본 링크 저장
+        f.write(f"  <url><loc>{safe_url}</loc><priority>0.8</priority></url>\n")
+
+    # 3. 주형님이 지정한 중요 게시물 (RSS에 없을 경우 대비)
+    for post_url in IMPORTANT_POSTS:
+        # RSS에 이미 포함된 글은 중복으로 넣지 않음
+        if post_url not in rss_links:
+            safe_url = post_url.replace("&", "&amp;")
+            f.write(f"  <url><loc>{safe_url}</loc><priority>0.9</priority></url>\n")
+
     f.write("</urlset>")
-print("✅ sitemap.xml 생성 완료")
+
+print(f"✅ sitemap.xml 생성 완료 (주요 게시물 {len(IMPORTANT_POSTS)}개 포함)")
 
 # =========================
-# robots.txt 생성 (추가된 부분!)
+# robots.txt 생성
 # =========================
 with open("robots.txt", "w", encoding="utf-8") as f:
     f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml")
