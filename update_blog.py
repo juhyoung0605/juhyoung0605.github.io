@@ -4,26 +4,16 @@ import os
 import re
 
 # =========================
-# 설정
+# 설정 (루트 주소 기준)
 # =========================
 RSS_URL = "https://rss.blog.naver.com/jubro_0605"
+SITE_URL = "https://juhyoung0605.github.io"
 INDEX_HTML = "index.html"
 SITEMAP_XML = "sitemap.xml"
 LAST_UPDATE_FILE = "last_update.txt"
-UPDATE_INTERVAL_DAYS = 7
+UPDATE_INTERVAL_DAYS = 0  # 테스트를 위해 우선 0으로 설정 (매번 업데이트)
 
 TODAY = datetime.date.today()
-
-# =========================
-# 마지막 업데이트 날짜 확인
-# =========================
-if os.path.exists(LAST_UPDATE_FILE):
-    with open(LAST_UPDATE_FILE, "r", encoding="utf-8") as f:
-        last_date = datetime.date.fromisoformat(f.read().strip())
-
-    if (TODAY - last_date).days < UPDATE_INTERVAL_DAYS:
-        print("⏭ 업데이트 스킵: 아직 주 1회 주기 아님")
-        exit()
 
 # =========================
 # RSS 파싱
@@ -44,8 +34,7 @@ for entry in feed.entries[:5]:
             {entry.title}
         </a>
         <p class="desc">{summary}</p>
-    </li>
-    """
+    </li>\n"""
 
 # =========================
 # index.html 갱신
@@ -53,48 +42,45 @@ for entry in feed.entries[:5]:
 with open(INDEX_HTML, "r", encoding="utf-8") as f:
     content = f.read()
 
-start = "<!-- POSTS_START -->"
-end = "<!-- POSTS_END -->"
+# 주형님의 HTML 마커 이름과 일치시키세요 (POSTS_START 인지 START_POSTS 인지 확인!)
+start = ""
+end = ""
 
-new_content = (
-    content[:content.find(start) + len(start)]
-    + "\n<ul>\n"
-    + html_list
-    + "\n</ul>\n"
-    + content[content.find(end):]
-)
-
-with open(INDEX_HTML, "w", encoding="utf-8") as f:
-    f.write(new_content)
+if start in content and end in content:
+    new_content = (
+        content.split(start)[0]
+        + start
+        + "\n<ul>\n"
+        + html_list
+        + "</ul>\n"
+        + end
+        + content.split(end)[1]
+    )
+    with open(INDEX_HTML, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    print("✅ index.html 업데이트 완료")
 
 # =========================
-# sitemap.xml (index + 글 링크)
+# sitemap.xml 생성
 # =========================
 with open(SITEMAP_XML, "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-
-    f.write(f"""
-    <url>
-        <loc>https://juhyoung0605.github.io/</loc>
-        <lastmod>{TODAY}</lastmod>
-    </url>
-    """)
+    f.write(f"  <url><loc>{SITE_URL}/</loc><lastmod>{TODAY}</lastmod></url>\n")
 
     for entry in feed.entries:
         safe_url = entry.link.replace("&", "&amp;")
-        f.write(f"""
-        <url>
-            <loc>{safe_url}</loc>
-        </url>
-        """)
-
+        f.write(f"  <url><loc>{safe_url}</loc></url>\n")
     f.write("</urlset>")
+print("✅ sitemap.xml 생성 완료")
 
 # =========================
-# 마지막 업데이트 날짜 기록
+# robots.txt 생성 (추가된 부분!)
 # =========================
+with open("robots.txt", "w", encoding="utf-8") as f:
+    f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml")
+print("✅ robots.txt 생성 완료")
+
+# 마지막 업데이트 날짜 기록
 with open(LAST_UPDATE_FILE, "w", encoding="utf-8") as f:
     f.write(TODAY.isoformat())
-
-print("✅ 주 1회 업데이트 완료")
