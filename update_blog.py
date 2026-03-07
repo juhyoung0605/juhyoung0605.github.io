@@ -25,7 +25,7 @@ feed = feedparser.parse(RSS_URL)
 # =========================
 html_list = ""
 for entry in feed.entries[:5]:
-    summary = re.sub('<[^<]+?>', '', entry.description)
+    summary = re.sub('<[^<]+?>', '', entry.get("description",""))
     summary = summary.replace('&nbsp;', ' ').strip()[:80] + "…"
 
     html_list += f"""
