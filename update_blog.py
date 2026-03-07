@@ -46,19 +46,24 @@ with open(INDEX_HTML, "r", encoding="utf-8") as f:
 start = "<!-- POSTS_START -->"
 end = "<!-- POSTS_END -->"
 
-if start in content and end in content:
-    new_content = (
-        content.split(start)[0]
-        + start
-        + "\n<ul>\n"
-        + html_list
-        + "</ul>\n"
-        + end
-        + content.split(end)[1]
-    )
-    with open(INDEX_HTML, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    print("✅ index.html 업데이트 완료")
+# 마커 존재 여부 확인
+if start not in content or end not in content:
+    raise Exception("POSTS_START / POSTS_END 마커가 index.html에 없습니다.")
+
+new_content = (
+    content.split(start)[0]
+    + start
+    + "\n<ul>\n"
+    + html_list
+    + "</ul>\n"
+    + end
+    + content.split(end)[1]
+)
+
+with open(INDEX_HTML, "w", encoding="utf-8") as f:
+    f.write(new_content)
+
+print("✅ index.html 업데이트 완료")
 
 # =========================
 # sitemap.xml 생성 (RSS + 주요 게시물 수동 추가)
