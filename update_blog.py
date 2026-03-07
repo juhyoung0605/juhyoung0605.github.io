@@ -1,122 +1,138 @@
 import requests
 import xml.etree.ElementTree as ET
-import re
 from datetime import datetime
+from html import escape
 
 RSS_URL = "https://rss.blog.naver.com/jubro_0605.xml"
-SITE_URL = "https://juhyoung0605.github.io"
-
 INDEX_FILE = "index.html"
 SITEMAP_FILE = "sitemap.xml"
 
-POST_LIMIT = 10
+MAX_POSTS = 10
 
 
-def clean_text(text):
-    text = re.sub("<.*?>", "", text)
-    text = text.replace("\n", " ").strip()
-    return text[:120] + "…" if len(text) > 120 else text
+def fetch_rss():
+    response = requests.get(RSS_URL)
+    response.raise_for_status()
+    return response.text
 
 
-print("📡 RSS 가져오는 중...")
+def parse_rss(xml_data):
+    root = ET.fromstring(xml_data)
 
-res = requests.get(RSS_URL)
-root = ET.fromstring(res.text)
+    items = []
+    for item in root.findall(".//item")[:MAX_POSTS]:
 
-posts = []
+        title = item.findtext("title", "")
+        link = item.findtext("link", "")
+        desc = item.findtext("description", "")
+        pub_date = item.findtext("pubDate", "")
 
-for item in root.findall(".//item")[:POST_LIMIT]:
+        # description 정리
+        desc = desc.replace("<![CDATA[", "").replace("]]>", "")
+        desc = desc[:120]
 
-    title = item.find("title").text
-    link = item.find("link").text
-    desc = item.find("description").text
+        items.append({
+            "title": title,
+            "link": link,
+            "desc": desc,
+            "date": pub_date
+        })
 
-    desc = clean_text(desc)
-
-    posts.append({
-        "title": title,
-        "link": link,
-        "desc": desc
-    })
-
-
-print(f"📝 {len(posts)}개 글 업데이트")
+    return items
 
 
-# ----------------------
-# index.html 업데이트
-# ----------------------
+def generate_post_html(posts):
 
-with open(INDEX_FILE, "r", encoding="utf-8") as f:
-    content = f.read()
+    html = "<ul>\n"
 
-start = "<!-- POSTS_START -->"
-end = "<!-- POSTS_END -->"
+    for post in posts:
 
-if start not in content or end not in content:
-    raise Exception("POSTS_START / POSTS_END 마커가 index.html에 없습니다.")
+        title = escape(post["title"])
+        link = escape(post["link"])
+        desc = escape(post["desc"])
 
-post_html = "\n<ul>\n"
-
-for p in posts:
-
-    post_html += f"""
-<li>
-<a href="{p['link']}" target="_blank" rel="noopener noreferrer">
-{p['title']}
-</a>
-<p class="desc">{p['desc']}</p>
-</li>
+        html += f"""
+    <li>
+        <a href="{link}" target="_blank" rel="noopener">
+            {title}
+        </a>
+        <p class="desc">{desc}</p>
+    </li>
 """
 
-post_html += "\n</ul>\n"
+    html += "\n</ul>"
 
-new_content = re.sub(
-    f"{start}.*?{end}",
-    f"{start}\n{post_html}\n{end}",
-    content,
-    flags=re.S
-)
-
-with open(INDEX_FILE, "w", encoding="utf-8") as f:
-    f.write(new_content)
-
-print("✅ index.html 업데이트 완료")
+    return html
 
 
-# ----------------------
-# sitemap 생성
-# ----------------------
+def update_index(posts):
 
-today = datetime.now().strftime("%Y-%m-%d")
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
 
-sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
-sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    start = "<!-- POSTS_START -->"
+    end = "<!-- POSTS_END -->"
 
-# 메인 페이지
-sitemap += f"""
+    if start not in content or end not in content:
+        raise Exception("POSTS_START / POSTS_END 마커가 index.html에 없습니다.")
+
+    new_posts = generate_post_html(posts)
+
+    updated = content.split(start)[0] + start + "\n" + new_posts + "\n" + end + content.split(end)[1]
+
+    with open(INDEX_FILE, "w", encoding="utf-8") as f:
+        f.write(updated)
+
+
+def generate_sitemap(posts):
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    urls = f"""
 <url>
-<loc>{SITE_URL}</loc>
-<lastmod>{today}</lastmod>
-<priority>1.0</priority>
+    <loc>https://juhyoung0605.github.io/</loc>
+    <lastmod>{today}</lastmod>
 </url>
 """
 
-for p in posts:
+    for post in posts:
 
-    sitemap += f"""
+        link = escape(post["link"])
+
+        urls += f"""
 <url>
-<loc>{p['link']}</loc>
-<lastmod>{today}</lastmod>
-<priority>0.8</priority>
+    <loc>{link}</loc>
+    <lastmod>{today}</lastmod>
 </url>
 """
 
-sitemap += "</urlset>"
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
 
-with open(SITEMAP_FILE, "w", encoding="utf-8") as f:
-    f.write(sitemap)
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}
+</urlset>
+"""
 
-print("🗺 sitemap.xml 생성 완료")
+    with open(SITEMAP_FILE, "w", encoding="utf-8") as f:
+        f.write(sitemap)
 
-print("🚀 블로그 업데이트 완료!")
+
+def main():
+
+    print("RSS 가져오는 중...")
+    xml_data = fetch_rss()
+
+    print("RSS 파싱 중...")
+    posts = parse_rss(xml_data)
+
+    print("index.html 업데이트...")
+    update_index(posts)
+
+    print("sitemap.xml 생성...")
+    generate_sitemap(posts)
+
+    print("완료!")
+
+
+if __name__ == "__main__":
+    main()
