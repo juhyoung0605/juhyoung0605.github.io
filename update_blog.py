@@ -43,8 +43,8 @@ with open(INDEX_HTML, "r", encoding="utf-8") as f:
     content = f.read()
 
 # 주형님의 HTML 마커 이름과 일치시키세요 (POSTS_START 인지 START_POSTS 인지 확인!)
-start = ""
-end = ""
+start = "<!-- POSTS_START -->"
+end = "<!-- POSTS_END -->"
 
 if start in content and end in content:
     new_content = (
